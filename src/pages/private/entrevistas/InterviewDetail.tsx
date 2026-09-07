@@ -1792,7 +1792,7 @@ const confirmUpload = async () => {
         </form>
 
         {/* ── Files section (Outside form) ── */}
-        <div className="mt-4">
+        <div className="mt-4 pb-6">
           <SectionCard icon={IconFolder} title="Archivos Subidos">
             {/* header action */}
             <div className="flex items-center justify-between -mt-5 mb-4">
