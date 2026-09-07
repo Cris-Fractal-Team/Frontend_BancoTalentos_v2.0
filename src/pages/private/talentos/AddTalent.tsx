@@ -390,7 +390,7 @@ export const AddTalent = () => {
               onSubmit={handleSubmit(onSubmit)}
             >
               {/* title */}
-              <div className="flex shrink-0 p-4 bg-white w-full md:w-[39.9rem] z-10 border-b rounded-t-lg border-gray-50 shadow-sm dark:bg-slate-800">
+              <div className="flex shrink-0 p-4 bg-white w-full md:w-[39.9rem] z-10 border-b rounded-t-lg border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex flex-col gap-1 text-[#3f3f46] w-1/2 dark:text-slate-200">
                   <h2 className="font-semibold text-xl">
                     Nuevo Talento
@@ -429,7 +429,7 @@ export const AddTalent = () => {
                   </button>
                 </div>
               </div>
-              <div className="min-h-0 flex-1 px-8 overflow-y-auto w-full md:w-[40rem]">
+              <div className="min-h-0 flex-1 px-8 pt-6 overflow-y-auto w-full md:w-[40rem]">
                 {/* files */}
                 <div>
                   <div className="flex justify-between items-center">
