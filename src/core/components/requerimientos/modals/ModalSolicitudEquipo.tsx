@@ -1,23 +1,30 @@
 import { X } from "lucide-react";
-import { DropdownForm, InputForm } from "../../forms";
+import { DropdownForm, InputForm } from "@/core/components/forms";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "../../../context/ParamsContext";
-import CheckboxForm from "../../forms/CheckboxForm";
+import { useParams } from "@/core/context/ParamsContext";
+import RadioGroupForm from "@/core/components/forms/RadioGroupForm";
+import { Dialog, DialogContent, DialogTitle } from "@/core/components/ui/shadcn/dialog";
+import { Button } from "@/core/components/ui/shadcn/button";
 import {
   ModalSolicitudEquipoFormSchema,
   ModalSolicitudEquipoFormType,
-} from "../../../models/schemas/ModalSolicitudEquipoSchema";
+} from "@/core/models/schemas/ModalSolicitudEquipoSchema";
 import {
   ANEXO_HARDWARE,
   TIPO_HARDWARE,
   TIPO_SOFTWARE,
   UNIDAD,
-} from "../../../utilities/constants";
-import { AsignarTalentoType } from "../../../models/interfaces/TalentoFMI";
-import { Tabs } from "../../ui/Tabs";
+} from "@/core/utilities/constants";
+import { AsignarTalentoType } from "@/core/models/interfaces/TalentoFMI";
+import { Tabs } from "@/core/components/ui/Tabs";
 import { format } from "date-fns";
+
+const SI_NO = [
+  { label: "Sí", value: "si" },
+  { label: "No", value: "no" },
+];
 
 interface Props {
   onClose: () => void;
@@ -214,12 +221,19 @@ export const ModalSolicitudEquipo = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[60]">
-      <div className="bg-white rounded-lg shadow-lg p-3 w-full md:w-[90%] lg:w-[1000px] min-h-[570px] overflow-y-auto dark:bg-slate-800">
+    // Escape equivale a la X (handleCancel); un clic fuera no cierra, como antes.
+    <Dialog open onOpenChange={(open) => { if (!open) handleCancel(); }}>
+      <DialogContent
+        className="block w-full max-w-none md:w-[90%] lg:w-[1000px] min-h-[570px] max-h-[calc(100vh-2rem)] overflow-y-auto p-3"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <div className="flex items-center justify-between p-2">
-          <h3 className="text-lg font-medium">Datos de Solicitud Equipo</h3>
+          <DialogTitle asChild>
+            <h3 className="text-lg font-medium">Datos de Solicitud Equipo</h3>
+          </DialogTitle>
           <button
             type="button"
+            aria-label="Cerrar"
             onClick={handleCancel}
             className="focus:outline-none"
           >
@@ -274,7 +288,11 @@ export const ModalSolicitudEquipo = ({
                       error={errors.tipoHardware}
                       required={true}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Una sola rejilla para todo el hardware: todas las
+                        etiquetas a la izquierda (antes Celular e Internet Móvil
+                        la llevaban encima) y 16 px entre filas, como el resto
+                        del modal (antes 32 px). */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                       <InputForm
                         name="procesador"
                         control={control}
@@ -307,77 +325,37 @@ export const ModalSolicitudEquipo = ({
                         disabled={!isPcOrLaptop}
                         required={false}
                       />
-                    </div>
 
-                    {/* Anexo, Celular e Internet Móvil */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                      {/* Anexo Hardware */}
-                      <div className="col-span-1 lg:col-span-6">
-                        <DropdownForm
-                          name="anexoHardware"
-                          control={control}
-                          label="Anexo"
-                          options={
-                            anexoHardwareParams?.map((param) => ({
-                              value: param.num1,
-                              label: param.string1,
-                            })) || []
-                          }
-                          error={errors.anexoHardware}
-                          required={true}
-                        />
-                      </div>
-
-                      {/* Contenedor para Celular e Internet Móvil */}
-                      <div className="col-span-1 lg:col-span-6 grid grid-cols-2 gap-6">
-                        {/* Celular */}
-                        <div className="col-span-1">
-                          <label className="block mb-2 font-medium">
-                            Celular
-                          </label>
-                          <div className="flex gap-8">
-                            <CheckboxForm
-                              name="celular"
-                              control={control}
-                              label="Sí"
-                              value="si"
-                              group="celular"
-                            />
-                            <CheckboxForm
-                              name="celular"
-                              control={control}
-                              label="No"
-                              value="no"
-                              defaultChecked={true}
-                              group="celular"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Internet Móvil */}
-                        <div className="col-span-1">
-                          <label className="block mb-2 font-medium">
-                            Internet Móvil
-                          </label>
-                          <div className="flex gap-8">
-                            <CheckboxForm
-                              name="internetMovil"
-                              control={control}
-                              label="Sí"
-                              value="si"
-                              group="internetMovil"
-                            />
-                            <CheckboxForm
-                              name="internetMovil"
-                              control={control}
-                              label="No"
-                              value="no"
-                              defaultChecked={true}
-                              group="internetMovil"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Anexo, Celular e Internet Móvil */}
+                      <DropdownForm
+                        name="anexoHardware"
+                        control={control}
+                        label="Anexo"
+                        options={
+                          anexoHardwareParams?.map((param) => ({
+                            value: param.num1,
+                            label: param.string1,
+                          })) || []
+                        }
+                        error={errors.anexoHardware}
+                        required={true}
+                      />
+                      <RadioGroupForm
+                        name="celular"
+                        control={control}
+                        label="Celular"
+                        orientation="horizontal"
+                        options={SI_NO}
+                        defaultValue="no"
+                      />
+                      <RadioGroupForm
+                        name="internetMovil"
+                        control={control}
+                        label="Internet Móvil"
+                        orientation="horizontal"
+                        options={SI_NO}
+                        defaultValue="no"
+                      />
                     </div>
 
                     <InputForm
@@ -421,7 +399,9 @@ export const ModalSolicitudEquipo = ({
                           </div>
 
                           {/* Columna Producto - eliminando espacio extra */}
-                          <div className="col-span-6 px-10">
+                          {/* Mismo margen en las dos columnas (antes 40 px en
+                              Producto y 16 px en Versión). */}
+                          <div className="col-span-6 px-2">
                             <div className="w-full">
                               <InputForm
                                 name={`software.${index}.producto`}
@@ -436,7 +416,7 @@ export const ModalSolicitudEquipo = ({
 
                           {/* Columna Versión - eliminando espacio extra */}
                           <div className="col-span-5 flex items-center">
-                            <div className="flex-grow px-4">
+                            <div className="flex-grow px-2">
                               <InputForm
                                 name={`software.${index}.version`}
                                 control={control}
@@ -463,13 +443,13 @@ export const ModalSolicitudEquipo = ({
 
                     {/* Botón para agregar nueva fila */}
                     <div className="mt-4">
-                      <button
-                        type="button"
-                        className="btn btn-blue"
+                      <Button
+                        variant="blue"
+                        className="mx-1"
                         onClick={addNewSoftwareRow}
                       >
                         Agregar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ),
@@ -478,12 +458,12 @@ export const ModalSolicitudEquipo = ({
           />
 
           <div className="flex justify-end items-center p-2">
-            <button className="btn btn-blue" type="submit">
+            <Button variant="blue" type="submit" className="mx-1">
               Aceptar
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

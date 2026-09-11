@@ -1,4 +1,11 @@
-import { ReactNode, useState, useEffect, useRef } from "react";
+import { ReactNode, useState } from "react";
+import { cn } from "@/core/lib/utils";
+import {
+  Tabs as TabsRoot,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/core/components/ui/shadcn/tabs";
 
 interface TabProps {
   label: string | ReactNode;
@@ -13,16 +20,30 @@ interface TabsProps {
   showErrors?: boolean;
   isDataLoading?: boolean;
   initialTab?: number;
+  /** Clases extra de la barra de pestañas (p. ej. su margen lateral). */
+  listClassName?: string;
+  /** Clases extra del contenedor de los paneles. */
+  contentClassName?: string;
 }
 
+/**
+ * Pestañas sobre los Tabs de shadcn (Radix): se recorren con las flechas y se
+ * anuncian como tablist/tab/tabpanel. La API no cambia.
+ *
+ * `forceMount` en cada panel es imprescindible: Radix desmonta las pestañas
+ * inactivas y ModalIngreso / ModalSolicitudEquipo tienen un formulario
+ * repartido entre pestañas; sin esto se perdería lo escrito al cambiar de
+ * pestaña. Los paneles inactivos se ocultan por CSS, como antes.
+ */
 export const Tabs = ({
   tabs,
   showErrors = false,
   isDataLoading = false,
   initialTab = 0,
+  listClassName,
+  contentClassName,
 }: TabsProps) => {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const prevActiveTabRef = useRef<number>(initialTab);
 
   const handleTabChange = (index: number) => {
     if (activeTab !== index && tabs[activeTab].onBlur) {
@@ -30,47 +51,57 @@ export const Tabs = ({
     }
     setActiveTab(index);
   };
-  useEffect(() => {
-    if (prevActiveTabRef.current !== activeTab) {
-      prevActiveTabRef.current = activeTab;
-    }
-  }, [activeTab]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <TabsRoot
+      value={String(activeTab)}
+      onValueChange={(value) => handleTabChange(Number(value))}
+      className="flex h-full min-h-0 flex-col"
+    >
       {/* Pestañas */}
       <div className="relative">
-        <div className="flex border-b border-gray-200 overflow-x-auto dark:border-slate-700">
-          {tabs.map((tab, index) => (
-            <div key={index}>
-              <button
-                type="button"
-                onClick={() => handleTabChange(index)}
-                className={`tab ${activeTab === index ? "tab-active" : "tab-inactive"}
-                                    ${tab.hasError && showErrors ? "text-red-600 dark:text-red-400" : ""}`}
-              >
-                {tab.label}
-              </button>
+        <TabsList className={listClassName}>
+          {tabs.map((tab, index) => {
+            const showError = !!tab.hasError && showErrors;
+            return (
+              <div key={index}>
+                <TabsTrigger
+                  value={String(index)}
+                  // group: la etiqueta puede reaccionar a la pestaña activa
+                  // (group-data-[state=active]:…).
+                  className={cn(
+                    "group",
+                    showError &&
+                      "text-red-600 hover:text-red-600 data-[state=active]:text-red-600 data-[state=active]:hover:text-red-600 dark:text-red-400 dark:hover:text-red-400 dark:data-[state=active]:text-red-400"
+                  )}
+                >
+                  {tab.label}
+                </TabsTrigger>
 
-              {tab.hasError && showErrors && tab.errorMessage && (
-                <div className="absolute z-10 px-3 py-2 text-sm text-nowrap font-medium text-white bg-red-600 rounded-md shadow-lg left-0 -bottom-10 mt-1">
-                  {tab.errorMessage}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {showError && tab.errorMessage && (
+                  <div
+                    role="alert"
+                    className="absolute z-10 px-3 py-2 text-sm text-nowrap font-medium text-white bg-red-600 rounded-md shadow-lg left-0 -bottom-10 mt-1"
+                  >
+                    {tab.errorMessage}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </TabsList>
       </div>
 
-      <div className="mt-1 min-h-0 flex-1">
+      <div className={cn("mt-1 min-h-0 flex-1", contentClassName)}>
         {tabs.map((tab, index) => (
-          <div
+          <TabsContent
             key={index}
-            className="h-full min-h-0"
-            style={{ display: activeTab === index ? "block" : "none" }}
+            value={String(index)}
+            forceMount
+            className="mt-0 h-full min-h-0 data-[state=inactive]:hidden"
           >
             {tab.children}
-          </div>
+          </TabsContent>
         ))}
         {isDataLoading && (
           <div className="absolute inset-0 bg-slate-100 bg-opacity-50 flex items-center justify-center z-50 dark:bg-slate-700">
@@ -80,6 +111,6 @@ export const Tabs = ({
           </div>
         )}
       </div>
-    </div>
+    </TabsRoot>
   );
 };

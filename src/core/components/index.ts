@@ -12,7 +12,6 @@ export * from "./ui/Pagination";
 export * from "./ui/RoutesWithNotFound";
 export * from "./ui/FilterDropDown";
 export * from "./talentos/sections/DynamicSection";
-export * from "./ui/OutsideClickHandler";
 export * from "./talentos/FavouriteButton";
 export * from "./talentos/TalentDetailsSkeleton";
 export * from "./ui/FileInput";

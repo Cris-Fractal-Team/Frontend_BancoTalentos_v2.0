@@ -3,20 +3,28 @@ import {
   useFieldArray,
   useFormContext,
 } from "react-hook-form";
-import { Pencil } from "lucide-react";
-import { UpdateBaseRQSchemaType } from "../../../../models/schemas/UpdateBaseRQSchema";
-import { DropdownForm } from "../../../forms";
-import { NumberInput } from "../../InputNumber";
-import { Param } from "../../../../models";
-import { BillingTable } from "../../BillingTable";
-import { RQFacturacionGrupoModalidad } from "../../../../models/interfaces/RQFacturacion";
+import { UpdateBaseRQSchemaType } from "@/core/models/schemas/UpdateBaseRQSchema";
+import { DropdownForm } from "@/core/components/forms";
+import { NumberInput } from "@/core/components/requerimientos/InputNumber";
+import { Param } from "@/core/models";
+import { BillingTable } from "@/core/components/requerimientos/BillingTable";
+import { Switch } from "@/core/components/ui/shadcn/switch";
+import { cn } from "@/core/lib/utils";
+import {
+  ChoiceTile,
+  EmptyControl,
+  Field,
+  FormGroup,
+  GroupDivider,
+  TabBody,
+  rqReadonly,
+} from "@/core/components/requerimientos/rq-ui";
 
 interface TabProps {
   rqDurationOptions: Param[];
   paymentModes: Param[];
   rqMode: Param[];
   isEditing: boolean;
-  handleToggleEdit: () => void;
   currencyOptions: Param[];
 }
 
@@ -25,11 +33,10 @@ export const TabManagment = ({
   paymentModes,
   rqMode,
   isEditing,
-  handleToggleEdit,
   currencyOptions,
 }: TabProps) => {
   const {
-    formState: { errors, isSubmitting },
+    formState: { errors },
     control,
     clearErrors,
     setValue,
@@ -40,6 +47,14 @@ export const TabManagment = ({
     control,
     name: "lstFacturacion",
   });
+
+  // Sin pulsar Editar los datos se ven en sus campos, pero bloqueados.
+  const locked = !isEditing;
+
+  const durationOptions = rqDurationOptions.map((d) => ({
+    value: d.num1,
+    label: d.string1,
+  }));
 
   const handleDurationChange = (checked: boolean) => {
     /**
@@ -81,12 +96,7 @@ export const TabManagment = ({
     idEstadoRegistro: 1,
   });
 
-  const handleChangeContractMode = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    label: string,
-  ) => {
-    const value = parseInt(e.target.value, 10);
-    const checked = e.target.checked;
+  const handleChangeContractMode = (value: number, checked: boolean) => {
     const current = getValues("lstFacturacion");
 
     const declareSunatIds = [2, 3]; // IDs que indican que declara a SUNAT
@@ -110,249 +120,177 @@ export const TabManagment = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col px-4">
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {/* Contenido del formulario */}
-        <div className="flex justify-end mb-1">
-          <button
-            type="button"
-            onClick={handleToggleEdit}
-            className="focus:outline-none"
-          >
-            <Pencil className="w-7 h-7" />
-          </button>
-        </div>
-
-        {/* Switch de tiene duración */}
-        <div className="flex items-center mb-6">
-          <label className="w-1/3 text-sm font-medium text-gray-700 dark:text-slate-200">
-            Tiene duración:
-          </label>
-
-          <div className="flex items-center gap-4 w-2/3">
-            <Controller
-              name="tieneDuracion"
-              control={control}
-              render={({ field }) => (
-                <>
-                  <label className="inline-flex items-center cursor-pointer relative">
-                    <input
-                      type="checkbox"
-                      checked={field.value || false}
-                      disabled={!isEditing}
-                      onChange={(e) => {
-                        if (isEditing) {
-                          field.onChange(e.target.checked);
-                          handleDurationChange(e.target.checked);
-                        }
-                      }}
-                      className="sr-only peer"
+    <TabBody>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-3">
+          <Controller
+            name="tieneDuracion"
+            control={control}
+            render={({ field }) => (
+              <Field
+                label="Duración del RQ"
+                required={isEditing && !!field.value}
+                error={errors.tieneDuracion?.message}
+                aside={
+                  <label
+                    className={cn(
+                      "flex items-center gap-2 text-[13px] text-gray-500 dark:text-slate-400",
+                      isEditing ? "cursor-pointer" : "cursor-not-allowed"
+                    )}
+                  >
+                    Tiene duración
+                    <Switch
+                      ref={field.ref}
                       aria-label="Tiene duración"
-                    />
-                    {/* Fondo del switch */}
-                    <div
-                      className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                        field.value ? "bg-blue-600" : "bg-gray-200 dark:bg-slate-700"
-                      } ${!isEditing ? "opacity-60" : ""}`}
-                    />
-                    {/* Bolita deslizante */}
-                    <span
-                      className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 dark:bg-slate-800 ${
-                        field.value
-                          ? "translate-x-5"
-                          : "translate-x-0"
-                      } ${!isEditing ? "opacity-60" : ""}`}
+                      checked={field.value || false}
+                      disabled={locked}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        handleDurationChange(checked);
+                      }}
+                      onBlur={field.onBlur}
+                      className="h-6 w-11 disabled:cursor-not-allowed disabled:opacity-100 data-[state=unchecked]:bg-gray-200 dark:data-[state=unchecked]:bg-slate-700"
+                      thumbClassName="h-5 w-5 shadow data-[state=checked]:translate-x-5"
                     />
                   </label>
-
-                  {/* Texto visible usando field.value directamente */}
-                  <span className="text-sm text-gray-700 dark:text-slate-200">
-                    {field.value
-                      ? "Tiene duración"
-                      : "No tiene duración"}
-                  </span>
-                </>
-              )}
-            />
-
-            {errors.tieneDuracion && (
-              <span className="text-red-500 text-xs ml-3">
-                {errors.tieneDuracion.message}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Campos de duración condicionales */}
-        <Controller
-          name="tieneDuracion"
-          control={control}
-          render={({ field }) => (
-            <>
-              {field.value && (
-                <div className="flex items-center mb-6">
-                  <label className="w-1/3 text-sm font-medium text-gray-700 dark:text-slate-200">
-                    Duración de RQ:
-                  </label>
-                  <div className="flex gap-4 w-2/3">
-                    <div className="flex flex-col gap-1">
+                }
+              >
+                {field.value ? (
+                  <div className="flex gap-2">
+                    <div className="flex w-24 shrink-0 flex-col gap-1">
                       <NumberInput<UpdateBaseRQSchemaType>
                         control={control}
                         name="duracion"
-                        isDisabled={!isEditing}
+                        isDisabled={locked}
                         error={errors?.duracion?.message}
+                        className={cn("w-full text-center", rqReadonly)}
                       />
                     </div>
-                    <DropdownForm
-                      name="idDuracion"
-                      control={control}
-                      error={errors.idDuracion}
-                      required={false}
-                      allowEmpty={true}
-                      flex={true}
-                      disabled={!isEditing}
-                      options={rqDurationOptions.map((d) => ({
-                        value: d.num1,
-                        label: d.string1,
-                      }))}
-                    />
+                    <div className="min-w-0 flex-1">
+                      <DropdownForm
+                        name="idDuracion"
+                        control={control}
+                        error={errors.idDuracion}
+                        required={false}
+                        allowEmpty={true}
+                        flex={true}
+                        disabled={locked}
+                        triggerClassName={rqReadonly}
+                        options={durationOptions}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        />
-
-        <div className="flex items-center mb-6">
-          <label className="w-1/3 text-sm font-medium text-gray-700 dark:text-slate-200">
-            Duración de contrato:
-          </label>
-          <div className="flex gap-4 w-2/3">
-            <div className="flex flex-col gap-1">
-              <NumberInput<UpdateBaseRQSchemaType>
-                control={control}
-                name="contrato.duration"
-                isDisabled={!isEditing}
-                error={errors?.contrato?.duration?.message}
-              />
-            </div>
-            <DropdownForm
-              name="contrato.idDuration"
-              control={control}
-              error={errors?.contrato?.idDuration}
-              required={false}
-              flex={true}
-              allowEmpty={true}
-              allowEmptyMessage="No definido"
-              disabled={!isEditing}
-              options={rqDurationOptions.map((d) => ({
-                value: d.num1,
-                label: d.string1,
-              }))}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center">
-          <label className="w-1/3 text-sm font-medium text-gray-700 dark:text-slate-200">
-            Modalidad:
-          </label>
-          <DropdownForm
-            name="idModalidad"
-            control={control}
-            error={errors.idModalidad}
-            required={false}
-            flex={true}
-            disabled={!isEditing}
-            options={rqMode.map((modalidad) => ({
-              value: modalidad.num1,
-              label: modalidad.string1,
-            }))}
-          />
-        </div>
-        <div className="flex items-center">
-          <label className="w-1/3 text-sm font-medium text-gray-700 dark:text-slate-200">
-            Modalidad de contrato:
-          </label>
-          <Controller
-            name="idModalidadFact"
-            control={control}
-            render={({ field }) => (
-              <div className="mt-4 flex flex-col gap-2">
-                {paymentModes.map((mode) => (
-                  <label
-                    key={mode.num1}
-                    className="inline-flex items-center space-x-2"
-                  >
-                    <input
-                      type="checkbox"
-                      value={mode.num1}
-                      disabled={!isEditing}
-                      checked={
-                        field.value?.includes(mode.num1) || false
-                      }
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        const value = mode.num1;
-                        handleChangeContractMode(e, mode.string1);
-
-                        if (checked) {
-                          field.onChange([
-                            ...(field.value || []),
-                            value,
-                          ]);
-                        } else {
-                          field.onChange(
-                            field.value?.filter(
-                              (v: number) => v !== value,
-                            ),
-                          );
-                        }
-                      }}
-                      className="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 dark:border-slate-600 dark:text-blue-400"
-                    />
-                    <span>{mode.string1}</span>
-                  </label>
-                ))}
-              </div>
+                ) : (
+                  <EmptyControl>Sin duración definida</EmptyControl>
+                )}
+              </Field>
             )}
           />
 
-          {errors.idModalidadFact && (
-            <span className="text-red-500 text-xs">
-              {errors.idModalidadFact.message}
-            </span>
-          )}
+          <Field label="Duración del contrato">
+            <div className="flex gap-2">
+              <div className="flex w-24 shrink-0 flex-col gap-1">
+                <NumberInput<UpdateBaseRQSchemaType>
+                  control={control}
+                  name="contrato.duration"
+                  isDisabled={locked}
+                  error={errors?.contrato?.duration?.message}
+                  className={cn("w-full text-center", rqReadonly)}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <DropdownForm
+                  name="contrato.idDuration"
+                  control={control}
+                  error={errors?.contrato?.idDuration}
+                  required={false}
+                  flex={true}
+                  allowEmpty={true}
+                  allowEmptyMessage="No definido"
+                  disabled={locked}
+                  triggerClassName={rqReadonly}
+                  options={durationOptions}
+                />
+              </div>
+            </div>
+          </Field>
+
+          <Field label="Modalidad" required={isEditing}>
+            <DropdownForm
+              name="idModalidad"
+              control={control}
+              error={errors.idModalidad}
+              required={false}
+              flex={true}
+              disabled={locked}
+              triggerClassName={rqReadonly}
+              options={rqMode.map((modalidad) => ({
+                value: modalidad.num1,
+                label: modalidad.string1,
+              }))}
+            />
+          </Field>
         </div>
+
+      <GroupDivider />
+
+      <FormGroup
+        title="Modalidad de contrato"
+        helper={
+          isEditing
+            ? "Cada modalidad marcada agrega debajo su banda salarial."
+            : "Debajo, la banda salarial de cada modalidad marcada."
+        }
+      >
+        <Controller
+          name="idModalidadFact"
+          control={control}
+          render={({ field }) => (
+            <div className="grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2">
+              {paymentModes.map((mode) => (
+                <ChoiceTile
+                  key={mode.num1}
+                  checked={field.value?.includes(mode.num1) || false}
+                  disabled={locked}
+                  onCheckedChange={(checked) => {
+                    handleChangeContractMode(mode.num1, checked);
+
+                    if (checked) {
+                      field.onChange([...(field.value || []), mode.num1]);
+                    } else {
+                      field.onChange(
+                        field.value?.filter((v: number) => v !== mode.num1),
+                      );
+                    }
+                  }}
+                >
+                  {mode.string1}
+                </ChoiceTile>
+              ))}
+            </div>
+          )}
+        />
+        {errors.idModalidadFact && (
+          <p className="text-[13px] text-red-500 dark:text-red-400">
+            {errors.idModalidadFact.message}
+          </p>
+        )}
 
         {/* === Render dinámico de BillingTables === */}
-        <div className="mt-6 space-y-4">
-          {fields.map((field, index) => (
-            <BillingTable
-              key={field.id}
-              index={index}
-              modalidadId={field.idModalidad}
-              title={findLabelForMode(field.idModalidad)}
-              isEditable={isEditing}
-              currencyOptions={currencyOptions}
-            />
-          ))}
-        </div>
-
-        <div className="flex-1"></div>
-
-        <div className="flex justify-end mt-4">
-          <button
-            type="submit"
-            disabled={!isEditing || isSubmitting}
-            className={`btn text-sm ${
-              isEditing && !isSubmitting ? "btn-primary" : "btn-disabled"
-            }`}
-          >
-            {isSubmitting ? "Actualizando…" : "Actualizar"}
-          </button>
-        </div>
-      </div>
-    </div>
+        {fields.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {fields.map((field, index) => (
+              <BillingTable
+                key={field.id}
+                index={index}
+                modalidadId={field.idModalidad}
+                title={findLabelForMode(field.idModalidad)}
+                isEditable={isEditing}
+                currencyOptions={currencyOptions}
+              />
+            ))}
+          </div>
+        )}
+      </FormGroup>
+    </TabBody>
   );
 };
